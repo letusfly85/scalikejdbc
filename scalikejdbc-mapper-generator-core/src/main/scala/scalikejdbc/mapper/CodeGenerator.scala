@@ -377,6 +377,19 @@ class CodeGenerator(table: Table, specifiedClassName: Option[String] = None)(imp
         1.indent + "}" + eol
     }
 
+    val batchMethod = {
+      // def batch=(
+      1.indent + s"def batch(list: List[" + className + "])(implicit session: DBSession = autoSession) {" + eol +
+        2.indent + "val params: Seq[Seq[(Symbol, Any)]] = list.map(elem => " + eol +
+        3.indent + "Seq(" + eol +
+        allColumns.map(c => 4.indent + "'" + c.nameInScala + " -> elem." + c.nameInScala + eol).mkString(comma) +
+        4.indent + "))" + eol +
+        4.indent + "SQL(\"\"\"insert into " + table.name + "(" + eol +
+        allColumns.map(c => 4.indent + "{" + c.nameInScala + "}").mkString(comma + eol) + eol +
+        3.indent + "\"\"\"\").batchByName(params: _*).apply()" + eol +
+        2.indent + "}" + eol
+    }
+
     /**
      * {{{
      * def save(entity: Member)(implicit session: DBSession = autoSession): Member = {
@@ -652,6 +665,8 @@ class CodeGenerator(table: Table, specifiedClassName: Option[String] = None)(imp
       (if (isQueryDsl) queryDslCountByMethod else interpolationCountByMethod) +
       eol +
       createMethod +
+      eol +
+      batchMethod +
       eol +
       saveMethod +
       eol +
