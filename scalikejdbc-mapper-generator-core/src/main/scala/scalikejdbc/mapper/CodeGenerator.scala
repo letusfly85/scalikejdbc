@@ -376,17 +376,32 @@ class CodeGenerator(table: Table, specifiedClassName: Option[String] = None)(imp
         createColumns.map { c => 3.indent + c.nameInScala + " = " + c.nameInScala }.mkString(comma + eol) + ")" + eol +
         1.indent + "}" + eol
     }
-
+    /**
+     * {{{
+     * def batch(list: List[Member])(implicit session: DBSession = autoSession) = {
+     *   val params: Seq[Seq[(Symbol, Any)]] = list.map(elem =>
+     *   Seq(
+     *     'id -> entity.id,
+     *     'name -> entity.name,
+     *     'birthday -> entity.birthday)
+     *   SQL("""insert into member values (
+     *     {id},
+     *     {name},
+     *     {birthday}
+     *   )""").batchByName(params: _*).apply()
+     * }
+     * }}}
+     */
     val batchMethod = {
       // def batch=(
       1.indent + s"def batch(list: List[" + className + "])(implicit session: DBSession = autoSession) {" + eol +
         2.indent + "val params: Seq[Seq[(Symbol, Any)]] = list.map(elem => " + eol +
         3.indent + "Seq(" + eol +
-        allColumns.map(c => 4.indent + "'" + c.nameInScala + " -> elem." + c.nameInScala + eol).mkString(comma) +
-        4.indent + "))" + eol +
-        4.indent + "SQL(\"\"\"insert into " + table.name + "(" + eol +
+        allColumns.map(c => 4.indent + "'" + c.nameInScala + " -> elem." + c.nameInScala).mkString(comma + eol) +
+        "))" + eol +
+        4.indent + "SQL(\"\"\"insert into " + table.name + " values (" + eol +
         allColumns.map(c => 4.indent + "{" + c.nameInScala + "}").mkString(comma + eol) + eol +
-        3.indent + "\"\"\"\").batchByName(params: _*).apply()" + eol +
+        3.indent + ")\"\"\").batchByName(params: _*).apply()" + eol +
         2.indent + "}" + eol
     }
 
