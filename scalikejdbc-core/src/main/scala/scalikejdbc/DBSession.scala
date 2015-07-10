@@ -493,7 +493,7 @@ trait DBSession extends LogSupport with LoanPattern {
    * @param paramsList list of parameters
    * @return count list
    */
-  def batch[C[_]](template: String, paramsList: Seq[Any]*)(implicit cbf: CanBuildFrom[Nothing, Int, C[Int]]): C[Int] = {
+  def batch(template: String, paramsList: Seq[Any]*): Seq[Int] = {
     ensureNotReadOnlySession(template)
     using(createBatchStatementExecutor(conn = conn, template = template)) { executor =>
       paramsList.foreach {
@@ -501,7 +501,7 @@ trait DBSession extends LogSupport with LoanPattern {
           executor.bindParams(params)
           executor.addBatch()
       }
-      executor.executeBatch().to[C]
+      executor.executeBatch().toSeq
     }
   }
 
